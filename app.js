@@ -8,7 +8,6 @@ const canvas = document.getElementById("canvas");
 const slSmile = document.getElementById("slSmile");
 const slBlink = document.getElementById("slBlink");
 const hairColor = document.getElementById("hairColor");
-const hint = document.getElementById("hint");
 let turnstileToken = null;
 
 window.onTurnstile = (t) => { turnstileToken = t; };
@@ -25,7 +24,7 @@ async function startSession(){
   await api("/api/session/start", { method:"POST", body:JSON.stringify({ token: turnstileToken, handle }) });
   document.getElementById("btnSave").disabled = false;
   document.getElementById("btnUpload").disabled = false;
-  await loadCharacter(); // ดึง config + URL ของผู้ใช้ ถ้ามี
+  await loadCharacter(); // ลองดึง config เก่าถ้ามี
 }
 
 async function saveCharacter(){
@@ -39,7 +38,6 @@ async function uploadVRM(file){
   const r = await fetch("/api/character/upload", { method:"POST", body: buf, headers:{ "content-type": file.type || "application/octet-stream" }, credentials:"include" });
   const d = await r.json();
   if(!d.ok) { alert(d.error||"upload failed"); return;}
-  await loadVrmFromUrl(d.url);
   alert("อัปโหลดสำเร็จ\n"+d.url);
 }
 
@@ -63,88 +61,6 @@ function applyConfig(cfg){
 async function loadCharacter(){
   const res = await api("/api/character/get", { method:"GET" });
   if(res?.data?.avatar_config) applyConfig(res.data.avatar_config);
-  if(res?.data?.avatar_vrm_url){
-    await loadVrmFromUrl(res.data.avatar_vrm_url);
-  } else {
-    // ไม่มีไฟล์ของผู้ใช้ → พยายามโหลด base.vrm
-    await loadVrmFromUrl("/models/base.vrm", true);
-  }
-}
-
-function clearHint(){ hint.style.display="none"; hint.textContent=""; }
-function showHint(msg){ hint.textContent = msg; hint.style.display="block"; }
-
-async function loadVrmFromUrl(url, isFallback=false){
-  clearHint();
-  const loader = new GLTFLoader();
-  return new Promise((resolve)=>{
-    loader.load(url, (gltf)=>{
-      VRMUtils.removeUnnecessaryJoints(gltf.scene);
-      VRM.from(gltf).then((_vrm)=>{
-        if(vrm){ scene.remove(vrm.scene); vrm.dispose?.(); }
-        vrm = _vrm;
-        vrm.scene.rotation.y = Math.PI;
-        scene.add(vrm.scene);
-        applyConfig(getConfigFromUI());
-        resolve(true);
-      });
-    }, undefined, (err)=>{
-      console.warn("โหลด VRM ไม่ได้:", err);
-      if(isFallback){
-        showHint("ยังไม่มีไฟล์ /models/base.vrm ในโปรเจกต์ — ให้กด 'อัปโหลด VRM' หลังเริ่มใช้งาน หรือวางไฟล์ base.vrm แล้วดีพลอยใหม่");
-      } else {
-        showHint("โหลดไฟล์ VRM ไม่สำเร็จ: " + url);
-      }
-      resolve(false);
-    });
-  });
-}
-
-async function init(){
-  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
-  renderer.setSize(window.innerWidth, window.innerHeight*0.7);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(30, window.innerWidth/(window.innerHeight*0.7), 0.1, 1000);
-  camera.position.set(0, 1.35, 2.2);
-
-  const controlsMod = OrbitControls;
-  controls = new controlsMod(camera, renderer.domElement);
-  controls.target.set(0, 1.35, 0);
-  controls.enableDamping = true;
-
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x222233, 1.0);
-  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-  dir.position.set(2,3,2);
-  scene.add(hemi, dir);
-
-  window.addEventListener("resize", ()=>{
-    renderer.setSize(window.innerWidth, window.innerHeight*0.7);
-    camera.aspect = window.innerWidth/(window.innerHeight*0.7);
-    camera.updateProjectionMatrix();
-  });
-
-  document.getElementById("btnLogin").onclick = startSession;
-  document.getElementById("btnSave").onclick = saveCharacter;
-  document.getElementById("btnUpload").onclick = async ()=>{
-    const f = await pickFile(".vrm");
-    if(f) uploadVRM(f);
-  };
-
-  slSmile.oninput = ()=> setExpr("happy", +slSmile.value);
-  slBlink.oninput = ()=> setExpr("blink", +slBlink.value);
-  hairColor.oninput = ()=> setHairColor(hairColor.value);
-
-  renderLoop();
-}
-
-function renderLoop(){
-  const dt = clock.getDelta();
-  if(vrm) vrm.update(dt);
-  controls.update();
-  renderer.render(scene, camera);
-  requestAnimationFrame(renderLoop);
 }
 
 function setExpr(name, value){
@@ -168,6 +84,65 @@ function setHairColor(hex){
       }
     }
   });
+}
+
+async function init(){
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
+  renderer.setSize(window.innerWidth, window.innerHeight*0.7);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(30, window.innerWidth/(window.innerHeight*0.7), 0.1, 1000);
+  camera.position.set(0, 1.35, 2.2);
+
+  const controlsMod = OrbitControls;
+  controls = new controlsMod(camera, renderer.domElement);
+  controls.target.set(0, 1.35, 0);
+  controls.enableDamping = true;
+
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x222233, 1.0);
+  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+  dir.position.set(2,3,2);
+  scene.add(hemi, dir);
+
+  const loader = new GLTFLoader();
+  loader.load("/models/base.vrm", (gltf)=>{
+    VRMUtils.removeUnnecessaryJoints(gltf.scene);
+    VRM.from(gltf).then((_vrm)=>{
+      vrm = _vrm;
+      vrm.scene.rotation.y = Math.PI;
+      scene.add(vrm.scene);
+      applyConfig(getConfigFromUI());
+      renderLoop();
+    });
+  }, undefined, (err)=>{
+    console.warn("โหลด base.vrm ไม่ได้:", err);
+  });
+
+  window.addEventListener("resize", ()=>{
+    renderer.setSize(window.innerWidth, window.innerHeight*0.7);
+    camera.aspect = window.innerWidth/(window.innerHeight*0.7);
+    camera.updateProjectionMatrix();
+  });
+
+  document.getElementById("btnLogin").onclick = startSession;
+  document.getElementById("btnSave").onclick = saveCharacter;
+  document.getElementById("btnUpload").onclick = async ()=>{
+    const f = await pickFile(".vrm");
+    if(f) uploadVRM(f);
+  };
+
+  slSmile.oninput = ()=> setExpr("happy", +slSmile.value);
+  slBlink.oninput = ()=> setExpr("blink", +slBlink.value);
+  hairColor.oninput = ()=> setHairColor(hairColor.value);
+}
+
+function renderLoop(){
+  const dt = clock.getDelta();
+  if(vrm) vrm.update(dt);
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(renderLoop);
 }
 
 function pickFile(accept){
