@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Avatar Creator • Cloudflare</title>
+  <script defer type="module" src="/app.js"></script>
+  <style>
+    :root { --bg:#0b0b0c; --fg:#eee; --panel:#111317; --btn:#1f2937; --btnb:#374151; }
+    * { box-sizing: border-box }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans Thai', sans-serif; background:var(--bg); color:var(--fg); }
+    #topbar { display:flex; gap:8px; align-items:center; padding:10px; border-bottom:1px solid #222; background:var(--panel); position:sticky; top:0; z-index:5 }
+    #canvas { width:100vw; height:70vh; display:block; background:#0a0b0c }
+    .panel { padding:10px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:var(--panel) }
+    input[type="range"]{ width:180px }
+    input[type="color"]{ width:40px; height:32px; border:none; background:transparent; padding:0 }
+    input#handle{ background:#0f1216; color:#eaeaea; border:1px solid #23262c; border-radius:10px; padding:8px 10px }
+    button{ background:var(--btn); color:#fff; border:1px solid var(--btnb); padding:8px 12px; border-radius:10px; cursor:pointer }
+    button[disabled]{ opacity:.5; cursor:not-allowed }
+    .spacer{ flex:1 }
+    .note{ opacity:.8; font-size:.9rem }
+  </style>
+  <!-- Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+  <div id="topbar">
+    <div class="cf-turnstile" data-sitekey="__TURNSTILE_SITE_KEY__" data-callback="onTurnstile"></div>
+    <input id="handle" placeholder="handle (ไม่บังคับ)" />
+    <button id="btnLogin">เริ่มใช้งาน</button>
+    <span class="spacer"></span>
+    <button id="btnSave" disabled>บันทึก</button>
+    <button id="btnUpload" disabled>อัปโหลด VRM</button>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div class="panel">
+    <span class="note">ปรับอารมณ์/สีแบบเร็ว (ตัวอย่าง)</span>
+    ยิ้ม: <input id="slSmile" type="range" min="0" max="1" step="0.01" value="0.3" />
+    กระพริบตา: <input id="slBlink" type="range" min="0" max="1" step="0.01" value="0.2" />
+    สีผม: <input id="hairColor" type="color" value="#2a2a2a" />
+  </div>
+  <div class="panel">
+    <span class="note">วางไฟล์โมเดลที่ <code>/models/base.vrm</code> (เช่นส่งออกจาก VRoid Studio)</span>
+  </div>
+</body>
+</html>
