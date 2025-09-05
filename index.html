@@ -19,8 +19,8 @@
     button[disabled]{ opacity:.5; cursor:not-allowed }
     .spacer{ flex:1 }
     .note{ opacity:.8; font-size:.9rem }
+    #hint { position:absolute; left:12px; top:60px; background:#111317cc; border:1px solid #222; padding:8px 10px; border-radius:8px; }
   </style>
-  <!-- Turnstile -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -32,6 +32,7 @@
     <button id="btnSave" disabled>บันทึก</button>
     <button id="btnUpload" disabled>อัปโหลด VRM</button>
   </div>
+  <div id="hint" style="display:none"></div>
   <canvas id="canvas"></canvas>
   <div class="panel">
     <span class="note">ปรับอารมณ์/สีแบบเร็ว (ตัวอย่าง)</span>
@@ -40,7 +41,7 @@
     สีผม: <input id="hairColor" type="color" value="#2a2a2a" />
   </div>
   <div class="panel">
-    <span class="note">วางไฟล์โมเดลที่ <code>/models/base.vrm</code> (เช่นส่งออกจาก VRoid Studio)</span>
+    <span class="note">ถ้าไม่เห็นโมเดล ให้ใส่ไฟล์ที่ <code>/models/base.vrm</code> หรือกด "อัปโหลด VRM" หลังเริ่มใช้งาน</span>
   </div>
 </body>
 </html>

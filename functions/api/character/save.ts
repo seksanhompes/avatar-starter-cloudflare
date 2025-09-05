@@ -1,5 +1,5 @@
 export const onRequestPost = async ({ request, env }) => {
-  const { json, bad, getCookie } = await import("../../../_utils.ts");
+  const { json, bad, getCookie } = await import("../../_utils.ts");
   const sid = getCookie(request, "sid");
   if (!sid) return bad("unauth", 401);
   const sess = await env.SESSIONS.get(`sid:${sid}`);
