@@ -95,7 +95,8 @@ async function init(){
   camera = new THREE.PerspectiveCamera(30, window.innerWidth/(window.innerHeight*0.7), 0.1, 1000);
   camera.position.set(0, 1.35, 2.2);
 
-  controls = new OrbitControls(camera, renderer.domElement);
+  const controlsMod = OrbitControls;
+  controls = new controlsMod(camera, renderer.domElement);
   controls.target.set(0, 1.35, 0);
   controls.enableDamping = true;
 
@@ -111,7 +112,7 @@ async function init(){
       vrm = _vrm;
       vrm.scene.rotation.y = Math.PI;
       scene.add(vrm.scene);
-      applyConfig(getConfigFromUI()); // ตั้งค่าเริ่มต้น
+      applyConfig(getConfigFromUI());
       renderLoop();
     });
   }, undefined, (err)=>{
@@ -131,7 +132,6 @@ async function init(){
     if(f) uploadVRM(f);
   };
 
-  // สไลเดอร์อัปเดตเรียลไทม์
   slSmile.oninput = ()=> setExpr("happy", +slSmile.value);
   slBlink.oninput = ()=> setExpr("blink", +slBlink.value);
   hairColor.oninput = ()=> setHairColor(hairColor.value);

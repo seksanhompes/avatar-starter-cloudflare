@@ -3,7 +3,7 @@ export const onRequestPost = async ({ request, env }) => {
   if (!token) return new Response("missing turnstile token", { status: 400 });
 
   const ip = request.headers.get("CF-Connecting-IP");
-  const { verifyTurnstile, setCookieHeader } = await import("../../../_utils.ts");
+  const { verifyTurnstile, setCookieHeader } = await import("../../_utils.ts");
   const ok = await verifyTurnstile(env.TURNSTILE_SECRET, token, ip);
   if (!ok) return new Response("turnstile failed", { status: 403 });
 
