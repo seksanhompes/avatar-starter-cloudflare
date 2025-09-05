@@ -4,13 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Avatar Creator • Cloudflare</title>
-
-  <!-- โหลดโค้ดหลัก (ภายใน app.js นำเข้า three/three-vrm ผ่าน CDN แล้ว) -->
-  <script defer type="module" src="/app.js?v=clean1"></script>
-
-  <!-- Turnstile -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
+  <script defer type="module" src="/app.js"></script>
   <style>
     :root { --bg:#0b0b0c; --fg:#eee; --panel:#111317; --btn:#1f2937; --btnb:#374151; }
     * { box-sizing: border-box }
@@ -26,6 +20,8 @@
     .spacer{ flex:1 }
     .note{ opacity:.8; font-size:.9rem }
   </style>
+  <!-- Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
   <div id="topbar">
@@ -36,11 +32,15 @@
     <button id="btnSave" disabled>บันทึก</button>
     <button id="btnUpload" disabled>อัปโหลด VRM</button>
   </div>
-
   <canvas id="canvas"></canvas>
-
   <div class="panel">
-    <span class="note">ถ้าไม่เห็นโมเดล ให้ใส่ไฟล์ที่ <code>/models/base.vrm</code> หรือกด "อัปโหลด VRM"</span>
+    <span class="note">ปรับอารมณ์/สีแบบเร็ว (ตัวอย่าง)</span>
+    ยิ้ม: <input id="slSmile" type="range" min="0" max="1" step="0.01" value="0.3" />
+    กระพริบตา: <input id="slBlink" type="range" min="0" max="1" step="0.01" value="0.2" />
+    สีผม: <input id="hairColor" type="color" value="#2a2a2a" />
+  </div>
+  <div class="panel">
+    <span class="note">วางไฟล์โมเดลที่ <code>/models/base.vrm</code> (เช่นส่งออกจาก VRoid Studio)</span>
   </div>
 </body>
 </html>

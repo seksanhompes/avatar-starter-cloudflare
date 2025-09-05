@@ -3,7 +3,6 @@ import { OrbitControls } from "https://unpkg.com/three@0.161.0/examples/jsm/cont
 import { GLTFLoader } from "https://unpkg.com/three@0.161.0/examples/jsm/loaders/GLTFLoader.js";
 import { VRM, VRMUtils } from "https://unpkg.com/@pixiv/three-vrm@2.0.7/lib/three-vrm.module.js";
 
-
 let vrm, renderer, camera, scene, controls, clock = new THREE.Clock();
 const canvas = document.getElementById("canvas");
 const slSmile = document.getElementById("slSmile");
@@ -96,8 +95,7 @@ async function init(){
   camera = new THREE.PerspectiveCamera(30, window.innerWidth/(window.innerHeight*0.7), 0.1, 1000);
   camera.position.set(0, 1.35, 2.2);
 
-  const controlsMod = OrbitControls;
-  controls = new controlsMod(camera, renderer.domElement);
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 1.35, 0);
   controls.enableDamping = true;
 
@@ -113,7 +111,7 @@ async function init(){
       vrm = _vrm;
       vrm.scene.rotation.y = Math.PI;
       scene.add(vrm.scene);
-      applyConfig(getConfigFromUI());
+      applyConfig(getConfigFromUI()); // ตั้งค่าเริ่มต้น
       renderLoop();
     });
   }, undefined, (err)=>{
@@ -133,6 +131,7 @@ async function init(){
     if(f) uploadVRM(f);
   };
 
+  // สไลเดอร์อัปเดตเรียลไทม์
   slSmile.oninput = ()=> setExpr("happy", +slSmile.value);
   slBlink.oninput = ()=> setExpr("blink", +slBlink.value);
   hairColor.oninput = ()=> setHairColor(hairColor.value);
