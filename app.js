@@ -1,3 +1,22 @@
+// ---- Turnstile token (debug-friendly) ----
+window.__cf_turnstile_token = "";
+window.onTurnstile = (t) => {
+  window.__cf_turnstile_token = t || "";
+  console.log("[turnstile] token =", window.__cf_turnstile_token ? window.__cf_turnstile_token.slice(0,10)+"..." : "(empty)");
+};
+
+// ดึงโทเคนจาก callback หรือจาก widget โดยตรง
+window.getTurnstileToken = function getTurnstileToken() {
+  if (window.__cf_turnstile_token) return window.__cf_turnstile_token;
+  if (window.turnstile && typeof window.turnstile.getResponse === "function") {
+    const el = document.querySelector(".cf-turnstile");
+    const wid = el?.getAttribute("data-widget-id"); // บางธีม Turnstile จะใส่ให้
+    const tok = wid ? window.turnstile.getResponse(wid) : window.turnstile.getResponse();
+    return tok || "";
+  }
+  return "";
+};
+
 import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://unpkg.com/three@0.161.0/examples/jsm/loaders/GLTFLoader.js";
@@ -148,19 +167,24 @@ async function init(){
     camera.updateProjectionMatrix();
   });
 
-  document.getElementById("btnLogin").onclick = async ()=>{
-    if(!turnstileToken) { alert("ยังไม่ผ่าน Turnstile"); return; }
-    const handle = document.getElementById("handle").value || null;
-    await api("/api/session/start", { method:"POST", body:JSON.stringify({ token: turnstileToken, handle }) });
-    document.getElementById("btnSave").disabled = false;
-    document.getElementById("btnUpload").disabled = false;
-    await loadCharacter();
-  };
-  document.getElementById("btnSave").onclick = saveCharacter;
-  document.getElementById("btnUpload").onclick = async ()=>{
-    const f = await pickFile(".vrm");
-    if(f) uploadVRM(f);
-  };
+  document.getElementById("btnLogin").onclick = async () => {
+  const token = window.getTurnstileToken();   // <-- ใช้ฟังก์ชันด้านบน
+  if (!token) { alert("ยังไม่ผ่าน Turnstile"); return; }
+
+  const handle = document.getElementById("handle").value || null;
+  const r = await fetch("/api/session/start", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token, handle })
+  });
+  if (!r.ok) { alert("เริ่มเซสชันไม่สำเร็จ: " + (await r.text())); return; }
+
+  document.getElementById("btnSave").disabled = false;
+  document.getElementById("btnUpload").disabled = false;
+  await loadCharacter();
+};
+
 }
 
 init();
