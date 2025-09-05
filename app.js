@@ -3,6 +3,7 @@ import { OrbitControls } from "https://unpkg.com/three@0.161.0/examples/jsm/cont
 import { GLTFLoader } from "https://unpkg.com/three@0.161.0/examples/jsm/loaders/GLTFLoader.js";
 import { VRM, VRMUtils } from "https://unpkg.com/@pixiv/three-vrm@2.0.7/lib/three-vrm.module.js";
 
+
 let vrm, renderer, camera, scene, controls, clock = new THREE.Clock();
 const canvas = document.getElementById("canvas");
 const slSmile = document.getElementById("slSmile");
