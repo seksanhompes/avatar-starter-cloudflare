@@ -24,7 +24,7 @@ async function startSession(){
   await api("/api/session/start", { method:"POST", body:JSON.stringify({ token: turnstileToken, handle }) });
   document.getElementById("btnSave").disabled = false;
   document.getElementById("btnUpload").disabled = false;
-  await loadCharacter(); // ลองดึง config เก่าถ้ามี
+  await loadCharacter();
 }
 
 async function saveCharacter(){
@@ -39,6 +39,7 @@ async function uploadVRM(file){
   const d = await r.json();
   if(!d.ok) { alert(d.error||"upload failed"); return;}
   alert("อัปโหลดสำเร็จ\n"+d.url);
+  await loadVrmFromUrl(d.url);
 }
 
 function getConfigFromUI(){
@@ -53,7 +54,6 @@ function applyConfig(cfg){
   const ex = cfg.expressions||{};
   setExpr("happy", ex.smile ?? 0.3);
   setExpr("blink", ex.blink ?? 0.2);
-
   const clr = cfg.colors?.hair;
   if(clr) setHairColor(clr);
 }
@@ -61,6 +61,34 @@ function applyConfig(cfg){
 async function loadCharacter(){
   const res = await api("/api/character/get", { method:"GET" });
   if(res?.data?.avatar_config) applyConfig(res.data.avatar_config);
+  if(res?.data?.avatar_vrm_url){
+    await loadVrmFromUrl(res.data.avatar_vrm_url);
+  } else {
+    await loadVrmFromUrl("/models/base.vrm", true);
+  }
+}
+
+async function loadVrmFromUrl(url, isFallback=false){
+  const loader = new GLTFLoader();
+  return new Promise((resolve)=>{
+    loader.load(url, (gltf)=>{
+      VRMUtils.removeUnnecessaryJoints(gltf.scene);
+      VRM.from(gltf).then((_vrm)=>{
+        if(vrm){ scene.remove(vrm.scene); vrm.dispose?.(); }
+        vrm = _vrm;
+        vrm.scene.rotation.y = Math.PI;
+        scene.add(vrm.scene);
+        applyConfig(getConfigFromUI());
+        resolve(true);
+      });
+    }, undefined, (err)=>{
+      console.warn("โหลด VRM ไม่ได้:", err);
+      if(isFallback){
+        alert("ยังไม่มี /models/base.vrm ในโปรเจกต์ หรือไฟล์เสียหาย");
+      }
+      resolve(false);
+    });
+  });
 }
 
 function setExpr(name, value){
@@ -86,6 +114,15 @@ function setHairColor(hex){
   });
 }
 
+function pickFile(accept){
+  return new Promise((resolve)=>{
+    const i = document.createElement("input");
+    i.type = "file"; i.accept = accept;
+    i.onchange = ()=> resolve(i.files?.[0] || null);
+    i.click();
+  })
+}
+
 async function init(){
   renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
   renderer.setSize(window.innerWidth, window.innerHeight*0.7);
@@ -105,53 +142,25 @@ async function init(){
   dir.position.set(2,3,2);
   scene.add(hemi, dir);
 
-  const loader = new GLTFLoader();
-  loader.load("/models/base.vrm", (gltf)=>{
-    VRMUtils.removeUnnecessaryJoints(gltf.scene);
-    VRM.from(gltf).then((_vrm)=>{
-      vrm = _vrm;
-      vrm.scene.rotation.y = Math.PI;
-      scene.add(vrm.scene);
-      applyConfig(getConfigFromUI());
-      renderLoop();
-    });
-  }, undefined, (err)=>{
-    console.warn("โหลด base.vrm ไม่ได้:", err);
-  });
-
   window.addEventListener("resize", ()=>{
     renderer.setSize(window.innerWidth, window.innerHeight*0.7);
     camera.aspect = window.innerWidth/(window.innerHeight*0.7);
     camera.updateProjectionMatrix();
   });
 
-  document.getElementById("btnLogin").onclick = startSession;
+  document.getElementById("btnLogin").onclick = async ()=>{
+    if(!turnstileToken) { alert("ยังไม่ผ่าน Turnstile"); return; }
+    const handle = document.getElementById("handle").value || null;
+    await api("/api/session/start", { method:"POST", body:JSON.stringify({ token: turnstileToken, handle }) });
+    document.getElementById("btnSave").disabled = false;
+    document.getElementById("btnUpload").disabled = false;
+    await loadCharacter();
+  };
   document.getElementById("btnSave").onclick = saveCharacter;
   document.getElementById("btnUpload").onclick = async ()=>{
     const f = await pickFile(".vrm");
     if(f) uploadVRM(f);
   };
-
-  slSmile.oninput = ()=> setExpr("happy", +slSmile.value);
-  slBlink.oninput = ()=> setExpr("blink", +slBlink.value);
-  hairColor.oninput = ()=> setHairColor(hairColor.value);
-}
-
-function renderLoop(){
-  const dt = clock.getDelta();
-  if(vrm) vrm.update(dt);
-  controls.update();
-  renderer.render(scene, camera);
-  requestAnimationFrame(renderLoop);
-}
-
-function pickFile(accept){
-  return new Promise((resolve)=>{
-    const i = document.createElement("input");
-    i.type = "file"; i.accept = accept;
-    i.onchange = ()=> resolve(i.files?.[0] || null);
-    i.click();
-  })
 }
 
 init();
